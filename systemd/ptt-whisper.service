@@ -1,6 +1,6 @@
 [Unit]
 Description=PTT Whisper Voice Input
-After=graphical-session.target whisper-server.service
+After=graphical.target whisper-server.service
 Wants=whisper-server.service
 
 [Service]
@@ -14,4 +14,4 @@ StandardOutput=journal
 StandardError=journal
 
 [Install]
-WantedBy=default.target
+WantedBy=graphical.target

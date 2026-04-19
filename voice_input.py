@@ -260,7 +260,6 @@ def _transcribe_and_paste(rate: int) -> None:
         wf.writeframes(raw)
         wf.close()
 
-        _show_overlay("transcribing")
         with open(tmp_path, "rb") as f:
             resp = requests.post(
                 WHISPER_URL,
@@ -314,6 +313,9 @@ def main() -> None:
 
     def on_key_event(event: keyboard.KeyboardEvent) -> None:
         global _recording, _frames
+
+        if event.scan_code != 100:  # 100 = KEY_RIGHTALT, 56 = KEY_LEFTALT
+            return
 
         if event.event_type == keyboard.KEY_DOWN:
             with _lock:

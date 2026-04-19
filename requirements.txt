@@ -1,5 +1,6 @@
 fastapi==0.136.0
 uvicorn==0.44.0
+python-multipart==0.0.20
 openai-whisper @ git+https://github.com/openai/whisper.git
 PyAudio==0.2.14
 keyboard==0.13.5
