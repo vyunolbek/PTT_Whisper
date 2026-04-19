@@ -234,6 +234,29 @@ def _record_loop(device_index: int, rate: int) -> None:
         stream.close()
 
 
+_TERMINAL_CLASSES = {
+    "gnome-terminal", "xterm", "konsole", "tilix", "alacritty",
+    "kitty", "terminator", "urxvt", "st-256color", "st",
+}
+
+
+def _is_terminal_focused() -> bool:
+    try:
+        env = {**os.environ, "DISPLAY": DISPLAY_VAR}
+        out = subprocess.check_output(
+            ["xprop", "-root", "_NET_ACTIVE_WINDOW"], text=True,
+            stderr=subprocess.DEVNULL, env=env,
+        )
+        wid = out.strip().split()[-1]
+        cls = subprocess.check_output(
+            ["xprop", "-id", wid, "WM_CLASS"], text=True,
+            stderr=subprocess.DEVNULL, env=env,
+        ).lower()
+        return any(t in cls for t in _TERMINAL_CLASSES)
+    except Exception:
+        return False
+
+
 def _transcribe_and_paste(rate: int) -> None:
     if not _frames:
         notify("Ничего не записано")
@@ -289,7 +312,7 @@ def _transcribe_and_paste(rate: int) -> None:
             return
 
         time.sleep(0.1)
-        keyboard.send("ctrl+v")
+        keyboard.send("ctrl+shift+v" if _is_terminal_focused() else "ctrl+v")
 
         preview = text[:60] + ("…" if len(text) > 60 else "")
         notify(f"✓ {preview}")

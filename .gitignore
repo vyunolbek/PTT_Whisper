@@ -1,0 +1,4 @@
+__pycache__/
+venv/
+voice_input_config.json
+overlay_position.json

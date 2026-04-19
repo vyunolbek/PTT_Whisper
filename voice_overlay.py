@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Floating recording indicator. Run as subprocess, kill to close."""
 
+import json
 import math
+import os
 import subprocess
 import sys
 import tkinter as tk
@@ -9,6 +11,8 @@ import tkinter as tk
 MODE = "transcribing" if len(sys.argv) > 1 and sys.argv[1] == "transcribing" else "recording"
 
 W, H = 170, 52
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+POS_FILE = os.path.join(PROJECT_DIR, "overlay_position.json")
 
 
 def _primary_screen() -> tuple[int, int, int, int]:
@@ -31,7 +35,27 @@ def _primary_screen() -> tuple[int, int, int, int]:
     return 0, 0, 1920, 1080
 
 
+def _load_pos(default_x: int, default_y: int) -> tuple[int, int]:
+    try:
+        with open(POS_FILE) as f:
+            d = json.load(f)
+            return d["x"], d["y"]
+    except Exception:
+        return default_x, default_y
+
+
+def _save_pos(x: int, y: int) -> None:
+    try:
+        with open(POS_FILE, "w") as f:
+            json.dump({"x": x, "y": y}, f)
+    except Exception:
+        pass
+
+
 ox, oy, sw, sh = _primary_screen()
+default_x = ox + (sw - W) // 2
+default_y = oy + sh - H - 70
+start_x, start_y = _load_pos(default_x, default_y)
 
 root = tk.Tk()
 root.title("")
@@ -39,20 +63,48 @@ root.overrideredirect(True)
 root.attributes("-topmost", True)
 root.attributes("-alpha", 0.88)
 root.configure(bg="#111111")
-root.geometry(f"{W}x{H}+{ox + (sw - W) // 2}+{oy + sh - H - 70}")
+root.geometry(f"{W}x{H}+{start_x}+{start_y}")
 
 canvas = tk.Canvas(root, width=W, height=H, bg="#111111", highlightthickness=0)
 canvas.pack()
 
+# ── Перетаскивание ────────────────────────────────────────────────────────────
+
+_drag_x = 0
+_drag_y = 0
+
+
+def _on_press(event):
+    global _drag_x, _drag_y
+    _drag_x = event.x
+    _drag_y = event.y
+
+
+def _on_drag(event):
+    x = root.winfo_x() + event.x - _drag_x
+    y = root.winfo_y() + event.y - _drag_y
+    root.geometry(f"+{x}+{y}")
+
+
+def _on_release(event):
+    _save_pos(root.winfo_x(), root.winfo_y())
+
+
+canvas.bind("<Button-1>", _on_press)
+canvas.bind("<B1-Motion>", _on_drag)
+canvas.bind("<ButtonRelease-1>", _on_release)
+
+# ── Анимация ──────────────────────────────────────────────────────────────────
+
 _angle = 0.0
 
-BARS      = 9
-BAR_W     = 6
-BAR_GAP   = 3
-BARS_X    = (W - (BARS * BAR_W + (BARS - 1) * BAR_GAP)) // 2
-MAX_H     = H - 14
-_FREQS    = [1.0, 1.4, 0.8, 1.7, 1.1, 0.9, 1.5, 1.2, 0.7]
-_PHASES   = [i * 0.65 for i in range(BARS)]
+BARS    = 9
+BAR_W   = 6
+BAR_GAP = 3
+BARS_X  = (W - (BARS * BAR_W + (BARS - 1) * BAR_GAP)) // 2
+MAX_H   = H - 14
+_FREQS  = [1.0, 1.4, 0.8, 1.7, 1.1, 0.9, 1.5, 1.2, 0.7]
+_PHASES = [i * 0.65 for i in range(BARS)]
 
 
 def _rounded_bar(x0: int, y0: int, x1: int, y1: int, r: int, color: str) -> None:
