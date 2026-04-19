@@ -81,6 +81,41 @@ sudo ./venv/bin/python voice_input.py --setup
 sudo ./venv/bin/python list_devices.py
 ```
 
+### Автозапуск через systemd
+
+Для запуска обоих сервисов автоматически после перезагрузки:
+
+```bash
+sudo bash install.sh
+```
+
+Скрипт:
+1. Создаёт venv и устанавливает зависимости (если нужно)
+2. Добавляет пользователя в группу `input` (чтобы не нужен был sudo)
+3. Устанавливает `whisper-server` как системный сервис
+4. Устанавливает `ptt-whisper` как пользовательский сервис
+5. Включает lingering, чтобы пользовательские сервисы стартовали до логина
+
+Полезные команды после установки:
+
+```bash
+# Логи
+sudo journalctl -u whisper-server -f
+journalctl --user -u ptt-whisper -f
+
+# Перезапуск
+sudo systemctl restart whisper-server
+systemctl --user restart ptt-whisper
+
+# Статус
+sudo systemctl status whisper-server
+systemctl --user status ptt-whisper
+```
+
+> **Важно:** после установки перелогинься, чтобы группа `input` вступила в силу.
+
+---
+
 ### Настройки
 
 Ключевые параметры в начале `voice_input.py`:
@@ -100,7 +135,11 @@ PTT_Whisper/
 ├── voice_input.py           # Главный скрипт: хоткей + запись + вставка
 ├── voice_overlay.py         # Визуальный индикатор (tkinter)
 ├── list_devices.py          # Утилита для просмотра аудиоустройств
-└── requirements.txt         # Зависимости Python
+├── requirements.txt         # Зависимости Python
+├── install.sh               # Скрипт установки systemd-сервисов
+└── systemd/
+    ├── whisper-server.service  # Шаблон системного сервиса
+    └── ptt-whisper.service     # Шаблон пользовательского сервиса
 ```
 
 ---
@@ -182,6 +221,41 @@ sudo ./venv/bin/python voice_input.py --setup
 sudo ./venv/bin/python list_devices.py
 ```
 
+### Autostart with systemd
+
+To start both services automatically after reboot:
+
+```bash
+sudo bash install.sh
+```
+
+The script:
+1. Creates the venv and installs dependencies (if needed)
+2. Adds the user to the `input` group (so `sudo` is no longer required)
+3. Installs `whisper-server` as a system service
+4. Installs `ptt-whisper` as a user service
+5. Enables lingering so user services start before login
+
+Useful commands after installation:
+
+```bash
+# Logs
+sudo journalctl -u whisper-server -f
+journalctl --user -u ptt-whisper -f
+
+# Restart
+sudo systemctl restart whisper-server
+systemctl --user restart ptt-whisper
+
+# Status
+sudo systemctl status whisper-server
+systemctl --user status ptt-whisper
+```
+
+> **Important:** log out and back in after installation for the `input` group to take effect.
+
+---
+
 ### Configuration
 
 Key parameters at the top of `voice_input.py`:
@@ -201,7 +275,11 @@ PTT_Whisper/
 ├── voice_input.py           # Main script: hotkey + recording + paste
 ├── voice_overlay.py         # Visual indicator (tkinter)
 ├── list_devices.py          # Utility to list audio input devices
-└── requirements.txt         # Python dependencies
+├── requirements.txt         # Python dependencies
+├── install.sh               # Systemd service installer
+└── systemd/
+    ├── whisper-server.service  # System service template
+    └── ptt-whisper.service     # User service template
 ```
 
 ---
